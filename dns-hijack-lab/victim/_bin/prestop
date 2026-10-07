@@ -1,0 +1,10 @@
+#!/bin/bash
+trap "echo Timed out; exit" SIGTERM
+echo "=== /etc/resolv.conf cua nan nhan ==="
+cat /etc/resolv.conf
+echo "=== Phan giai portal.lab.local tu victim (qua resolver mac dinh) ==="
+dig portal.lab.local A +short +time=2 +tries=1
+echo "=== Truy van truc tiep rogue server 172.20.0.4 ==="
+dig @172.20.0.4 portal.lab.local A +short +time=2 +tries=1
+echo "=== So sanh voi DNS hop le 172.20.0.3 ==="
+dig @172.20.0.3 portal.lab.local A +short +time=2 +tries=1

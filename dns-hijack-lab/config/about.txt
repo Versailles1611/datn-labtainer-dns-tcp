@@ -1,0 +1,1 @@
+Mo phong tan cong DNS Hijacking: chuyen huong truy van DNS cua nan nhan sang mot may chu DNS gia mao (rogue DNS) va dap tra dia chi IP sai lech.

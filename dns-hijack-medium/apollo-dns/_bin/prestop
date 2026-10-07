@@ -1,0 +1,8 @@
+#!/bin/bash
+trap "echo Timed out; exit" SIGTERM
+
+echo "=== Dump Apollo cache ==="
+sudo rndc dumpdb -cache 2>/dev/null
+sleep 1
+echo "=== preuve poisoning OK if 10.99.0.99 appears below ==="
+sudo grep -A 4 "chase" /var/cache/bind/dump.db 2>/dev/null

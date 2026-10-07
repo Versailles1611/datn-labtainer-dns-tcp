@@ -1,0 +1,10 @@
+#!/bin/bash
+trap "echo Timed out; exit" SIGTERM
+
+echo "=== spoof.pcapng ==="
+ls -la /home/ubuntu/spoof.pcapng 2>/dev/null
+
+echo "=== packet capture contains forged DNS response (look for A 10.99.0.99) ==="
+if [ -f /home/ubuntu/spoof.pcapng ]; then
+    sudo tcpdump -nn -r /home/ubuntu/spoof.pcapng 2>/dev/null | head -30
+fi

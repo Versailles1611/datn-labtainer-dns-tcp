@@ -1,0 +1,13 @@
+#!/bin/bash
+trap "echo Timed out; exit" SIGTERM
+
+echo "=== /etc/host from user ==="
+cat /etc/hosts
+
+echo "=== /etc/host hosts attacks ==="
+grep -i "example.com" /etc/hosts
+
+echo "=== Resolve www.chase.com tu user (sau cache poisoning) ==="
+dig www.chase.com A +short +time=2 +tries=1
+
+echo "=== END(GETADDRINFO) ==="

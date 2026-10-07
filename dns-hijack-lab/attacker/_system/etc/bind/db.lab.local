@@ -1,0 +1,18 @@
+$TTL 60
+
+@   IN  SOA ns.lab.local. admin.lab.local. (
+        2026100601
+        3600
+        1800
+        604800
+        60
+)
+
+    IN  NS  ns.lab.local.
+
+ns      IN  A   172.20.0.4
+
+; Sinh vien: doi dia chi cua portal thanh mot IP gia mao
+; de thuc hien tan cong DNS hijacking / pharming.
+portal  IN  A   172.20.0.3
+www     IN  A   172.20.0.3

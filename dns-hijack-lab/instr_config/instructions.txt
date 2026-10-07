@@ -1,0 +1,60 @@
+BAI LAB: MO PHONG TAN CONG DNS HIJACKING
+==========================================
+
+BOI CANH
+--------
+He thong gom 3 may ao tren cung mot mang LAN (172.20.0.0/24):
+
+  - victim     (172.20.0.2): may nan nhan, can phan giai ten portal.lab.local.
+  - dns-server (172.20.0.3): may chu DNS hop le, hien tai zone lab.local,
+                          bao gom:
+                              portal.lab.local  A  172.20.0.3
+  - attacker   (172.20.0.4): may cua ke tan cong (ban).
+
+TINH TRANG BAN DAU
+------------------
+- Trong may victim, /etc/resolv.conf dang tro toi may chu DNS hop le:
+      nameserver 172.20.0.3
+- Trong may attacker da co san BIND9 duoc cai san voi vung zone lab.local,
+  nhung CHUA cau hinh tra ve IP gia mao.
+
+NHIEM VU CUA BAN (muc do TRUNG BINH)
+-------------------------------------
+1. Tren attacker, sua file zone /etc/bind/db.lab.local de tra ve IP gia mao
+   172.20.0.99 cho portal.lab.local.
+
+      sudo nano /etc/bind/db.lab.local
+
+2. Khoi dong / nap lai BIND9 tren attacker de zone moi co hieu luc:
+
+      sudo service bind9 start
+      sudo service bind9 reload   #neu bind dang chay
+
+3. Tren victim, chuyen huong DNS sang may chu gia mao bang cach sua file
+   /etc/resolv.conf:
+
+      sudo nano /etc/resolv.conf
+      # doi thanh: nameserver 172.20.0.4
+
+4. Kiem chung: tren victim, truy van lai ten mien:
+
+      dig portal.lab.local +short
+
+   ket qua dung khi tra ve 172.20.0.99 (chu khong phai 172.20.0.3 nua).
+
+KIEM TRA KET QUA
+----------------
+Tu Linux host, chay lenh:
+
+    checkwork
+
+De xem danh sach cac checkwork: kiem tra cau hinh resolver cua nan nhan,
+ket qua phan giai ten, log truy van tren rogue server, v.v.
+
+KET THUC
+--------
+Khi hoan thanh, chay:
+
+    stoplab
+
+Luu y: ket qua checkwork sau khi stoplab se duoc luu de cham diem.

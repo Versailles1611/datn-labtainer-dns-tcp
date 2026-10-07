@@ -1,0 +1,9 @@
+#!/bin/bash
+trap "echo Timed out; exit" SIGTERM
+echo "=== Truy van thu tao query log ==="
+dig @172.20.0.4 portal.lab.local A +short +time=2 +tries=1
+sleep 1
+echo "=== Vung zone hien tai tren attacker ==="
+sudo cat /etc/bind/db.lab.local 2>/dev/null || cat /etc/bind/db.lab.local
+echo "=== Query log ==="
+sudo cat /var/log/named/queries.log 2>/dev/null || cat /var/log/named/queries.log 2>/dev/null

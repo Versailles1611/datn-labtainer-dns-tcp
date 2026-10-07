@@ -1,0 +1,7 @@
+#!/bin/bash
+echo "nameserver 172.20.0.3" > /etc/resolv.conf
+service bind9 start
+sleep 1
+chmod 666 /var/log/named/queries.log 2>/dev/null
+chmod 777 /var/log/named
+exit 0

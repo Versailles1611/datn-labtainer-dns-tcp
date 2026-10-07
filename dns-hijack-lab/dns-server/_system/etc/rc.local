@@ -1,0 +1,4 @@
+#!/bin/bash
+echo "127.0.0.1" > /etc/resolv.conf
+service bind9 start
+exit 0
