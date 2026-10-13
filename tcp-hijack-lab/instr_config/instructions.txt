@@ -13,36 +13,50 @@ He thong gom 3 may ao tren cung mot mang LAN (172.21.0.0/24):
 
 NHIEM VU CUA BAN (muc do TRUNG BINH)
 -------------------------------------
-Buoc 1. Tren victim, mo phien TCP toi server:
+Buoc 1. Tren attacker, ARP spoofing de chen giua victim va server:
+
+      cd ~/.local/bin
+      sudo setsid nohup ./arp-poison eth0 >/tmp/arp.log 2>&1 < /dev/null &
+      disown
+
+  Kiem tra tien trinh con song: ps aux | grep arp-poison
+  Kiem tra tren victim: ip neigh | grep 172.21.0.3 phai thay dia chi
+  172.21.0.3 tro toi MAC cua attacker (02:42:ac:15:00:04).
+  Chu y: dung chung 1 terminal, khong dong cua so, khong pkill,
+  khong restart lab giua chung.
+
+Buoc 2. Tren attacker, bat capture TRUOC khi mo phien:
+
+      sudo tcpdump -Z root -U -n -w ~/session.pcap 'tcp port 9999'
+
+  De cua so nay chay (co -U de ghi file ngay lap tuc).
+
+Buoc 3. Tren victim, mo phien TCP toi server:
 
       start-session
 
   Kiem tra tren server: sudo cat /var/log/session.log phai thay HELLO.
+  (Server don luong: chi mo 1 phien, khong mo them ket noi khac.)
 
-Buoc 2. Tren attacker, ARP spoofing de chen giua victim va server:
+Buoc 4. Tren attacker, dung capture (Ctrl+C) roi doc SEQ/ACK:
 
-      sudo nohup ./arp-poison eth0 >/tmp/arp.log 2>&1 &
-
-  Kiem tra tren victim: ip neigh | grep 172.21.0.3 phai thay dia chi
-  172.21.0.3 tro toi MAC cua attacker (02:42:ac:15:00:04).
-
-Buoc 3. Tren attacker, sniff phien TCP de lay so SEQ/ACK:
-
-      sudo tcpdump -Z root -U -n -w ~/session.pcap 'tcp port 9999'  (-U de ghi file ngay lap tuc)
-
-  Doc truc tiep: sudo tcpdump -nn -r ~/session.pcap
+      sudo tcpdump -nn -r ~/session.pcap
 
   Tim goi tin victim -> server co du lieu HELLO (cong dich 9999), ghi lai:
-    - so sequence TIEP THEO cua victim (seq + do dai payload), vi du HELLO\n
-      dai 6 byte thi next-seq = seq + 6,
-    - so acknowledgment hien tai,
+    - so sequence TIEP THEO cua victim (seq + do dai payload), vi du goi
+      HELLO\n dai 6 byte hien "seq 1:7" thi next-seq = so tuyet doi cua 7,
+    - so acknowledgment hien tai (so tuyet doi cuoi cua server),
     - cong nguon (sport) cua victim.
+  Vi du tron ven: SYN victim "seq 2452713148", du lieu "seq 1:7" nghia la
+  next-seq = 2452713148 + 1 + 6 = 2452713155; server "seq 4262417" va du
+  lieu "seq 1:11" nghia la ack = 4262417 + 1 + 10 = 4262428; sport 48844.
 
-Buoc 4. Tren attacker, chen goi tin gia mao vao phien:
+Buoc 5. Tren attacker, chen goi tin gia mao vao phien:
 
       sudo python3 hijack.py <seq> <ack> <sport>
 
-  Vi du: sudo python3 hijack.py 1234567 7654321 45678
+  Vi du: sudo python3 hijack.py 2452713155 4262428 48844
+  (Nho cd ~/.local/bin truoc vi sudo khong thay PATH cua ubuntu.)
 
   Kiem tra tren server: sudo cat /var/log/session.log phai thay HIJACKED.
 
@@ -52,7 +66,8 @@ Tu Linux host, chay lenh:
 
     checkwork
 
-De xem 4 checkwork: phien TCP, ARP poison, pcap sniff, goi tin gia mao.
+De xem 4 checkwork: phien TCP (tcp_session_ok), ARP poison (tcp_arp_ok),
+pcap sniff (tcp_sniffed_ok), goi tin gia mao (tcp_hijacked_ok).
 
 KET THUC
 --------
