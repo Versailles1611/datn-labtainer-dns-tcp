@@ -1,0 +1,63 @@
+BAI LAB: MO PHONG TAN CONG TCP HIJACKING
+==========================================
+
+BOI CANH
+--------
+He thong gom 3 may ao tren cung mot mang LAN (172.21.0.0/24):
+
+  - victim   (172.21.0.2): may nan nhan, mo phien TCP toi server.
+  - server   (172.21.0.3): dich vu TCP cong 9999, ghi moi du lieu nhan
+                        duoc vao /var/log/session.log.
+  - attacker (172.21.0.4): may cua ke tan cong (ban), co san scapy,
+                        tcpdump va 2 script ho tro: arp-poison, hijack.py.
+
+NHIEM VU CUA BAN (muc do TRUNG BINH)
+-------------------------------------
+Buoc 1. Tren victim, mo phien TCP toi server:
+
+      start-session
+
+  Kiem tra tren server: sudo cat /var/log/session.log phai thay HELLO.
+
+Buoc 2. Tren attacker, ARP spoofing de chen giua victim va server:
+
+      sudo nohup ./arp-poison eth0 >/tmp/arp.log 2>&1 &
+
+  Kiem tra tren victim: ip neigh | grep 172.21.0.3 phai thay dia chi
+  172.21.0.3 tro toi MAC cua attacker (02:42:ac:15:00:04).
+
+Buoc 3. Tren attacker, sniff phien TCP de lay so SEQ/ACK:
+
+      sudo tcpdump -Z root -U -n -w ~/session.pcap 'tcp port 9999'  (-U de ghi file ngay lap tuc)
+
+  Doc truc tiep: sudo tcpdump -nn -r ~/session.pcap
+
+  Tim goi tin victim -> server co du lieu HELLO (cong dich 9999), ghi lai:
+    - so sequence TIEP THEO cua victim (seq + do dai payload), vi du HELLO\n
+      dai 6 byte thi next-seq = seq + 6,
+    - so acknowledgment hien tai,
+    - cong nguon (sport) cua victim.
+
+Buoc 4. Tren attacker, chen goi tin gia mao vao phien:
+
+      sudo python3 hijack.py <seq> <ack> <sport>
+
+  Vi du: sudo python3 hijack.py 1234567 7654321 45678
+
+  Kiem tra tren server: sudo cat /var/log/session.log phai thay HIJACKED.
+
+KIEM TRA KET QUA
+----------------
+Tu Linux host, chay lenh:
+
+    checkwork
+
+De xem 4 checkwork: phien TCP, ARP poison, pcap sniff, goi tin gia mao.
+
+KET THUC
+--------
+Khi hoan thanh, chay:
+
+    stoplab
+
+Luu y: ket qua checkwork sau khi stoplab se duoc luu de cham diem.

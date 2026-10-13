@@ -1,0 +1,5 @@
+#!/bin/bash
+# Mo phien TCP tu nan nhan toi server, giu ket noi 10 phut de tan cong.
+# Chay tren container victim:  start-session
+(echo "HELLO"; sleep 600) | nc 172.21.0.3 9999 &
+echo "Phien TCP toi 172.21.0.3:9999 da mo (HELLO da gui)."

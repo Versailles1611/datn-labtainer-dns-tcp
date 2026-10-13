@@ -1,0 +1,6 @@
+#!/bin/bash
+trap "echo Timed out; exit" SIGTERM
+echo "=== Nhat ky phien TCP tren server ==="
+cat /var/log/session.log
+echo "=== Ket noi hien tai ==="
+ss -tn | grep 9999

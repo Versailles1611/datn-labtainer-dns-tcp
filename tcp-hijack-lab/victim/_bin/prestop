@@ -1,0 +1,6 @@
+#!/bin/bash
+trap "echo Timed out; exit" SIGTERM
+echo "=== Ket noi TCP cua nan nhan ==="
+ss -tn | grep 9999
+echo "=== Bang ARP cua nan nhan (server phai tro toi MAC cua attacker) ==="
+ip neigh | grep 172.21.0.3

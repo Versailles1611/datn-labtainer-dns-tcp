@@ -1,0 +1,7 @@
+#!/bin/bash
+echo 1 > /proc/sys/net/ipv4/ip_forward
+# Tat ICMP redirect de MITM khong bi lo (kernel se bao victim noi thang server)
+echo 0 > /proc/sys/net/ipv4/conf/all/send_redirects
+echo 0 > /proc/sys/net/ipv4/conf/default/send_redirects
+echo 0 > /proc/sys/net/ipv4/conf/eth0/send_redirects
+exit 0
