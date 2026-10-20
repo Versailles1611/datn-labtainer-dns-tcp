@@ -1,0 +1,87 @@
+BAI LAB: TCP RST HIJACKING
+==========================================
+
+BOI CANH
+--------
+He thong gom 3 may ao tren cung mot mang LAN (172.21.0.0/24):
+
+  - victim   (172.21.0.2): may nan nhan, dang mo phien TCP toi server.
+  - server   (172.21.0.3): dich vu TCP, cho phep ket noi tu victim.
+  - attacker (172.21.0.4): may cua ke tan cong (ban), co san scapy,
+    tcpdump de sniff phien TCP.
+
+NHIEM VU CUA BAN (muc do TRUNG BINH)
+-------------------------------------
+
+Buoc 1. Tren attacker, thuc hien ARP spoofing de giua victim va server:
+  
+      cd ~/.local/bin
+      sudo nohup ./arp-poison eth0 >/tmp/arp.log 2>&1 < /dev/null &
+      disown
+  
+  Kiem tra tren victim: ip neigh | grep 172.21.0.3 phai thay dia chi
+  172.21.0.3 tro toi MAC cua attacker (02:42:ac:15:00:04).
+
+Buoc 2. Tren attacker, sniff phien TCP hien tai de lay thong so SEQ/ACK:
+  
+      sudo tcpdump -Z root -U -n -w ~/session.pcap 'tcp port 9999'
+  
+  De cua so chay, tren victim gui them du lieu: echo PROBE | nc -w 3 172.21.0.3 9999
+
+  De doc capture (Ctrl+C truoc cua so tcpdump hoac mo terminal khac):
+      sudo tcpdump -nn -r ~/session.pcap
+  
+  Tim so sau:
+    - SEQ hien tai cua victim
+    - ACK hien tai cua server
+    - Cordon nguon (sport) cua victim
+
+Buoc 3. Tren attacker, tao goi tin RST de dong phien TCP:
+  
+      sudo python3 rst-hijack.py <seq> <ack> <sport>
+  
+  Trong do:
+    - <seq> = so sequence hien tai cua victim (tu pcap)
+    - <ack> = so acknowledgment hien tai cua server
+    - <sport> = cordon nguon cua victim
+  
+  Vi du: sudo python3 rst-hijack.py 2452713155 4262428 48844
+
+  Goi tin RST se dong ngay lap tuc phien TCP da mo.
+
+  Kiem tra tren server: sudo cat /var/log/session.log phai chua ket luc dong phien
+  hoac thong diep ket thuc phien.
+
+Buoc 4. Kiem tra ket qua:
+  
+      checkwork
+  
+  De xem 3 checkwork: gui tin RST, phien da dong, ARP chinh xac.
+
+KIEM TRA KET QUA
+----------------
+Tu Linux host, chay lenh:
+
+    checkwork
+
+De xem 3 checkwork: gui tin RST, phien da dong, ARP chinh xac.
+
+KET THUC
+--------
+Khi hoan thanh, chay:
+
+    stoplab
+
+LUA CHON THU TU THUC HANH:
+1. Phao yen: arp-poison -> sniff -> tao RST -> kiem tra
+2. Tat pkill hoac dong terminal giua trinhieng, vi viec sniff va chen RST phai dam bao ket noi con tro.
+3. Dung scapy Python script de tao goi tin RST that luc.
+
+THEM THONG TIN VE GOI TIN RST:
+Goiti RST TCP co dang:
+  IP src=VICTIM, dst=SERVER / TCP flags=R / seq=<seq> / ack=<ack>
+
+Goiti nay se dong ngay phien TCP vi server se tu dong dong kenh va
+bo sung ket noi. Khong can chen goi tin du lieu nua, chi dong kenh.
+
+================================================================================
