@@ -1,0 +1,76 @@
+BAI LAB: DNS-BASED TCP HIJACKING
+==========================================
+
+BOI CANH
+--------
+He thong gom 3 may ao tren cung mot mang LAN (172.21.0.0/24):
+
+  - victim   (172.21.0.2): may nan nhan, mo phien TCP toi server, co cau hong DNS.
+  - server   (172.21.0.3): dich vu TCP cong 9999, ghi moi du lieu nhan duoc vao /var/log/session.log.
+  - attacker (172.21.0.4): may cua ke tan cong (ban), co san scapy,
+    tcpdump, netwox va script arp-poison.
+
+NHIEM VU CUA BAN (muc do TRUNG BINH)
+-------------------------------------
+
+Buoc 1. Tren attacker, thuc hien ARP spoofing de giua victim va server:
+  
+      cd ~/.local/bin
+      sudo nohup ./arp-poison eth0 >/tmp/arp.log 2>&1 < /dev/null &
+      disown
+  
+  Kiem tra tren victim: ip neigh | grep 172.21.0.3 phai thay dia chi
+  172.21.0.3 tro toi MAC cua attacker (02:42:ac:15:00:04).
+
+Buoc 2. Tren attacker, cai dat DNS gia mao de chuyen huong victim:
+  
+      netwox 105 -h www.chase.com -H 172.21.0.99 -a www.chase.com -A 172.21.0.99 -d eth0 -s 172.21.0.2 -T 600
+  
+  Hoac cau hong DNS server de tro ve IP gia mao 172.21.0.99.
+
+Buoc 3. Tren victim, mo phien TCP toi server (theo doi huong DNS):
+
+      start-session
+  
+  Kiem tra tren server: sudo cat /var/log/session.log phai thay HELLO.
+
+Buoc 4. Tren attacker, dung tcpdump de sniff goi tin:
+
+      sudo tcpdump -Z root -U -n -w ~/session.pcap 'tcp port 9999'
+  
+  De cua so chay, tren victim gui them du lieu: echo PROBE | nc -w 3 172.21.0.3 9999
+
+  De doc capture (Ctrl+C truoc cua so tcpdump hoac mo terminal khac):
+      sudo tcpdump -nn -r ~/session.pcap
+  
+  Tim so sau:
+    - SEQ next cua victim: lay tu goi SYN seq + 1 + do dai payload (vi HELLO la 6 byte, next-seq = seq + 7)
+    - ACK cua server: SYN-ACK seq + 1 + 10 (server reply HELLO + ACK)
+    - sport: cordon nguon cua victim
+
+Buoc 5. Tren attacker, chen goi tin gia mao vao phien TCP:
+
+      sudo python3 hijack.py <seq> <ack> <sport>
+  
+  Vi du: sudo python3 hijack.py 2452713155 4262428 48844
+
+  Kiem tra tren server: sudo cat /var/log/session.log phai chua HIJACKED.
+
+KIEM TRA KET QUA
+----------------
+Tu Linux host, chay lenh:
+
+    checkwork
+
+De xem 4 checkwork: dns_redirect_ok, dns_fake_answer_ok, tcp_session_ok, tcp_hijacked_ok.
+
+KET THUC
+--------
+Khi hoan thanh, chay:
+
+    stoplab
+
+LUA CHON THU TU THUC HANH:
+1. Phao yen: arp-poison -> cai DNS -> start-session -> sniff -> chen goi tin
+2. Tat pkill hoac dong terminal giua trinhieng, vi viec capture va chen phai dam bao ket noi con tro.
+3. Dung tcpdump kèm cflag -U de ghi file pcap that luc.

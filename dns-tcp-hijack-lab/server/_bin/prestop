@@ -1,0 +1,5 @@
+#!/bin/bash
+echo "=== Ket noi TCP tren server ==="
+cat /var/log/session.log
+echo "=== Ketnoi hien tai ==="
+ss -tn | grep 9999

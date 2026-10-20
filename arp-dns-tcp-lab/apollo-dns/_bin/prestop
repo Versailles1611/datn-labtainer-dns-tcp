@@ -1,0 +1,8 @@
+#!/bin/bash
+echo "=== File capture tren attacker ==="
+ls -la ~/session.pcap 2>/dev/null
+echo "=== Noi dung capture (cong 53) ==="
+sudo tcpdump -nn -r ~/session.pcap 2>/dev/null | head -20
+echo "=== DNS cache dump ==="
+sudo rndc dumpdb -cache 2>/dev/null
+grep -A 3 chase /var/cache/bind/dump.db 2>/dev/null
