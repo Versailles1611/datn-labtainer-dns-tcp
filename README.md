@@ -48,3 +48,30 @@ Rebuild image sau khi sua lab:
 ```bash
 rebuild dns-hijack-medium -f -L -C apollo-dns
 ```
+
+## Xu ly su co
+
+### `Remote image ... is lacking a base version`
+
+Labtainer tu choi image tren Docker Hub neu image thieu label `base`. Khi rebuild/push
+image moi, chay lai:
+
+```bash
+./distrib/add-base-labels.sh haiyen1102
+```
+
+Script se them label `base=labtainers/labtainer.base2.<id>` cho tat ca image
+`<lab>.<container>.student` cua cac lab trong repo va push lai len Docker Hub.
+
+### Sau khi cap nhat lab: `Could not find image for ...`
+
+Labtainer cache ban copy cua `start.config` tai
+`~/labtainer/trunk/scripts/labtainer-student/.tmp/<lab>/start.config`.
+Neu lab da tung duoc chay bang phien ban cu (vi du truoc khi them `REGISTRY`),
+ban copy nay se duoc dung lai va co the sai registry. Xoa cache cua lab do:
+
+```bash
+rm -rf ~/labtainer/trunk/scripts/labtainer-student/.tmp/<lab>
+```
+
+roi chay lai `labtainer <lab>`.
