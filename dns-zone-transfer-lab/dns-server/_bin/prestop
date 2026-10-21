@@ -1,0 +1,5 @@
+#!/bin/bash
+echo "=== AXFR configuration on the DNS server ==="
+grep -n "allow-transfer" /etc/bind/named.conf.local 2>/dev/null
+echo "=== zone file ==="
+cat /var/cache/bind/example.com.db 2>/dev/null

@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "=== ARP cache of the victim ==="
+ip neigh

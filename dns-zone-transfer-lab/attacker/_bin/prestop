@@ -1,0 +1,5 @@
+#!/bin/bash
+echo "=== saved zone transfer (/tmp/zone.txt) ==="
+cat /tmp/zone.txt 2>/dev/null
+echo "=== live AXFR attempt ==="
+dig @172.21.0.3 example.com AXFR +time=3 +tries=1 2>&1

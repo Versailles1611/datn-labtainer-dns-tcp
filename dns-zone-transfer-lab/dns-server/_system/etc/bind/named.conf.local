@@ -1,0 +1,5 @@
+zone "example.com" {
+    type master;
+    file "/var/cache/bind/example.com.db";
+    allow-transfer { any; };
+};

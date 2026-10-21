@@ -1,71 +1,86 @@
-BAI LAB: DNS ZONE TRANSFER
+BAI LAB: DNS ZONE TRANSFER (AXFR)
 ==========================================
 
 BOI CANH
 --------
-He thong gom 3 may ao tren cung mot mang LAN (172.21.0.0/24):
+He thong gom 3 may ao tren mang LAN 172.21.0.0/24:
 
-  - victim   (172.21.0.2): may nan nhan, chua client DNS thu cong.
-  - dns-server (172.21.0.3): may chu DNS BIND9, chua domain example.com.
-  - attacker (172.21.0.4): may cua ke tan cong (ban), co san dig, tcpdump.
+  - victim     (172.21.0.2): may nhan vien, dung DNS server 172.21.0.3.
+  - dns-server (172.21.0.3): BIND9 phuc vu zone example.com.
+  - attacker   (172.21.0.4): may cua ban, co dig va tcpdump.
 
-NHIEM VU CUA BAN (muc do TRUNG BINH)
+MUC TIEU
+--------
+Kiem tra xem DNS server co cho phep zone transfer (AXFR) tu bat ky may nao
+khong. Neu co, ke tan cong lay duoc toan bo ban ghi DNS noi bo.
+
+BUOC 1 - Thu zone transfer
+--------------------------
+Tren attacker:
+
+    dig @172.21.0.3 example.com AXFR
+
+Hoac luu ket qua:
+
+    dig @172.21.0.3 example.com AXFR > /tmp/zone.txt
+    cat /tmp/zone.txt
+
+Neu thanh cong, ket qua co dang:
+
+    example.com.        300 IN SOA ns.example.com. admin.example.com. (...)
+    example.com.        300 IN NS  ns.example.com.
+    ns.example.com.     300 IN A   172.21.0.3
+    www.example.com.    300 IN A   172.21.0.3
+    ...
+    ;; XFR size: 6 records
+
+BUOC 2 - Doc cac ban ghi quan trong
+-----------------------------------
+Tu ket qua zone transfer, xac dinh:
+  - SOA record (Start of Authority)
+  - NS record (name server)
+  - A record cua cac may noi bo
+
+BUOC 3 - Xem cau hinh sai tren server
 -------------------------------------
+Tren dns-server:
 
-Buoc 1. Tren attacker, kiem tra DNS server co phuc vu zone transfer khong:
-  
-      dig @172.21.0.3 AXFR @172.21.0.3 example.com
-  
-  Hoac:
-      dig @172.21.0.3 AXFR 172.21.0.3
-  
-  Kiem tra ket qua: co gom the nap toan bo cat luu domain example.com khong?
+    cat /etc/bind/named.conf.local
 
-Buoc 2. Neu zone transfer duoc cho phep, doc cac cat luu:
-  
-      dig @172.21.0.3 AXFR example.com > /tmp/zone.txt
-  
-  Kiem tra /tmp/zone.txt chua:
-    - SOA record (Start of Authority)
-    - Toan bo cat luu cua domain example.com
-    - NS records
-    - A records cua cac may
+Chu y dong:
 
-Buoc 3. Neu zone transfer KHONG duoc phep (thuc te), server se tra loi loi:
-  
-      ; Transfer failed
-  
-  Hoac se chi ra loi: denial
+    allow-transfer { any; };
 
-Buoc 4. Kiem tra tren dns-server: named.conf.local de hieu cach thay doi cau hinh:
-  
-      cat /etc/bind/named.conf.local
-  
-  Nhan nap them dong:
-    zone "example.com" IN {
-        type master;
-        allow-transfer { none; };  // Chỉ phep transfer trong miễn phí
-    }
+Day la cau hinh nguy hiem. Cach sua:
+
+    allow-transfer { 127.0.0.1; };
+    // hoac
+    allow-transfer { none; };
+
+Sau khi sua, khoi dong lai bind9:
+
+    sudo systemctl restart bind9
+
+BUOC 4 - Thu lai
+----------------
+Tren attacker:
+
+    dig @172.21.0.3 example.com AXFR
+
+Phai bi tu choi (Transfer failed).
 
 KIEM TRA KET QUA
 ----------------
-Tu Linux host, chay lenh:
+Tu Linux host:
 
     checkwork
 
-De xem 4 checkwork: cw_zone_xfer_offered, cw_zone_xfer_allowed, cw_zone_xfer_success, cw_soa_record.
+4 checkwork:
+    cw_zone_transfer - server tra loi zone transfer
+    cw_soa_record    - lay duoc SOA record
+    cw_ns_record     - lay duoc NS record
+    cw_host_records  - liet ke duoc cac A record noi bo
 
 KET THUC
 --------
-Khi hoan thanh, chay:
-
     stoplab
-
-Luu y: Zone transfer le nguy hiem vi cho phep ke tan cong lay cat luu toan bo may chu.
-Nhieu cung cap DNS dat allow-transfer { any; } hoac allow-transfer { ; } trong named.conf.
-Cau hinh hop le: allow-transfer { 127.0.0.1; }; (chi phep tu localhost).
-
-THU TU THUC HANH:
-1. Phao yen: Kiem tra zone transfer da dang -> Doc SOA -> Kiem tra cat luu
-2. Neu khong the transfer: Kiem tra named.conf.local de xac thuc cau hinh
-3. Tat pkill hoac dong terminal giua trinh tien.

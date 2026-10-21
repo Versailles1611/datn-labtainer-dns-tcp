@@ -1,0 +1,5 @@
+#!/bin/bash
+echo "=== TCP sessions on the server ==="
+cat /var/log/session.log
+echo "=== Current connections on port 9999 ==="
+ss -tn | grep 9999

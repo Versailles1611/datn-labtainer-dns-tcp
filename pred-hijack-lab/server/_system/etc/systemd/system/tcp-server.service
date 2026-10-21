@@ -1,0 +1,11 @@
+[Unit]
+Description=Lab TCP echo service on port 9999
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /usr/local/bin/tcp-server.py
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target

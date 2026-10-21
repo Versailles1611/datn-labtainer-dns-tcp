@@ -1,0 +1,16 @@
+options {
+    directory "/var/cache/bind";
+    dump-file "/var/cache/bind/dump.db";
+
+    listen-on { any; };
+    listen-on-v6 { none; };
+
+    allow-query { any; };
+    recursion yes;
+    allow-recursion { 192.168.0.0/24; };
+
+    forwarders { 192.168.0.1; };
+    forward only;
+
+    dnssec-validation no;
+};

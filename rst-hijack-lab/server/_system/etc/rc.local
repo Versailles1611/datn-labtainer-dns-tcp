@@ -1,0 +1,9 @@
+#!/bin/bash
+for i in $(seq 1 30); do
+    ip -4 addr show eth0 2>/dev/null | grep -q "inet " && break
+    sleep 1
+done
+# lab starts with the victim entry already poisoned (attacker MAC)
+ip neigh replace 172.21.0.2 lladdr 02:42:ac:15:00:04 dev eth0 nud permanent
+systemctl start tcp-server
+exit 0

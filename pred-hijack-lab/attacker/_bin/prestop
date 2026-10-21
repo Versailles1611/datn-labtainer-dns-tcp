@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "=== Goiti pred-hijack tren attacker ==="
+echo "=== packet capture on the attacker ==="
 ls -la ~/session.pcap 2>/dev/null
-echo "=== Noi dung capture ==="
-sudo tcpdump -nn -r ~/session.pcap 2>/dev/null | head -10
+echo "=== content of the capture (port 9999) ==="
+sudo tcpdump -nn -r ~/session.pcap 2>/dev/null | head -30

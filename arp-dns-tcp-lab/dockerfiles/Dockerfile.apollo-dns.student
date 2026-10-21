@@ -1,7 +1,0 @@
-FROM ubuntu:22.04
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    bind9 bind9utils dnsutils iproute2 && rm -rf /var/lib/apt/lists/*
-RUN mkdir -p /var/cache/bind
-RUN mkdir -p /var/log
-RUN mkdir -p /etc/bind

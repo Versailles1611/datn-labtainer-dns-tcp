@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "=== Ket noi TCP tren server ==="
+echo "=== TCP sessions on the server ==="
 cat /var/log/session.log
-echo "=== Ketnoi hien tai ==="
+echo "=== Current connections on port 9999 ==="
 ss -tn | grep 9999

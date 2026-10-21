@@ -1,0 +1,13 @@
+#!/bin/bash
+for i in $(seq 1 30); do
+    ip -4 addr show eth0 2>/dev/null | grep -q "inet " && break
+    sleep 1
+done
+echo 0 > /proc/sys/net/ipv4/conf/all/accept_redirects
+echo 0 > /proc/sys/net/ipv4/conf/eth0/accept_redirects
+echo 0 > /proc/sys/net/ipv4/conf/all/secure_redirects
+echo 1 > /proc/sys/net/ipv4/conf/all/arp_accept
+echo 1 > /proc/sys/net/ipv4/conf/eth0/arp_accept
+# lab starts with the server entry already poisoned (attacker MAC)
+ip neigh replace 172.21.0.3 lladdr 02:42:ac:15:00:04 dev eth0 nud permanent
+exit 0

