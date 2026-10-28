@@ -55,6 +55,18 @@ Nhiem vu:
 4 checkwork: `syn_flood_identified`, `rst_injection_identified`,
 `session_hijack_identified`, `live_port_scan_identified` (+ `all_passed`).
 
+## Cai dat IModule
+
+Chay trong thu muc `labtainer-student` (thu muc nay da co `./bin` trong PATH):
+
+```bash
+cd ~/labtainer/labtainer-student
+imodule https://github.com/Versailles1611/labtainer-dns-labs/raw/main/imodules/imodule-tcp-detect-lab.tar
+```
+
+URL dang `github.com/<user>/<repo>/raw/main/...` se tu dong redirect sang
+`raw.githubusercontent.com`, khong can doi sang dia chi raw dai.
+
 ## Chay lab
 
 ```bash
