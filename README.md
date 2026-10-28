@@ -55,6 +55,8 @@ Nhiem vu:
 4 checkwork: `syn_flood_identified`, `rst_injection_identified`,
 `session_hijack_identified`, `live_port_scan_identified` (+ `all_passed`).
 
+Kịch bản và hướng dẫn chi tiết: [docs/tcp-detect-lab.md](docs/tcp-detect-lab.md)
+
 ## Cai dat IModule
 
 Chay trong thu muc `labtainer-student` (thu muc nay da co `./bin` trong PATH):
