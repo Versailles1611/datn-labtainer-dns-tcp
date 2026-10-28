@@ -1,6 +1,6 @@
 # Labtainer DNS Hijacking Labs
 
-Hai bai lab mo phong tan cong DNS Hijacking / Pharming chay tren nen Labtainer (Docker).
+Cac bai lab mo phong tan cong va phat hien tan cong DNS/TCP chay tren nen Labtainer (Docker).
 
 ## 1. dns-hijack-lab (muc do: trung binh)
 
@@ -34,13 +34,34 @@ Bai lab SEED, 4 container: `user` (192.168.0.100), `apollo-dns` (192.168.0.10, B
 
 4 checkwork: `cw_task1_hosts`, `cw_task2_pcap`, `cw_task3_cache`, `cw_task4_userfake`.
 
+## 9. tcp-detect-lab (phat hien tan cong TCP)
+
+Bai lab phong thu: sinh vien dong vai chuyen vien SOC, phan tich 3 capture
+va bat song mot cu quet cong tren LAN `172.22.0.0/24`.
+
+| Container | IP | Vai tro |
+|---|---|---|
+| `analyst` | 172.22.0.2 | May tram SOC, co tcpdump + 3 capture |
+| `victim` | 172.22.0.3 | May nguoi dung |
+| `server` | 172.22.0.4 | Dich vu TCP echo tren cong 9999 |
+| `attacker` | 172.22.0.5 | May tan cong, quet cong analyst |
+
+Nhiem vu:
+1. Phan tich `01-syn-flood.pcap`: tim IP nguon + so goi SYN.
+2. Phan tich `02-rst-injection.pcap`: tim RST gia mao (seq + MAC).
+3. Phan tich `03-session-hijack.pcap`: tim du lieu bi chen (seq + payload).
+4. Bat song `live-scan.pcap` tren analyst, xac dinh IP may quet.
+
+4 checkwork: `syn_flood_identified`, `rst_injection_identified`,
+`session_hijack_identified`, `live_port_scan_identified` (+ `all_passed`).
+
 ## Chay lab
 
 ```bash
 cd ~/labtainer/labtainer-student
-labtainer dns-hijack-lab        # hoac dns-hijack-medium
-checkwork dns-hijack-medium     # kiem tra giua chung
-stoplab dns-hijack-medium       # ket thuc + cham diem
+labtainer tcp-detect-lab        # hoac dns-hijack-lab / dns-hijack-medium
+checkwork tcp-detect-lab        # kiem tra giua chung
+stoplab tcp-detect-lab          # ket thuc + cham diem
 ```
 
 Rebuild image sau khi sua lab:

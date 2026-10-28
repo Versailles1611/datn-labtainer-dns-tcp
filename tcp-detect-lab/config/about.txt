@@ -1,0 +1,18 @@
+LAB: TCP ATTACK DETECTION
+=========================
+
+Ban la chuyen vien SOC (Security Operations Center) cua mot mang LAN nho.
+He thong gom 4 may:
+
+  - analyst  (172.22.0.2): may tram cua ban, co tcpdump va cac file pcap.
+  - victim   (172.22.0.3): may nguoi dung binh thuong.
+  - server   (172.22.0.4): dich vu TCP echo tren cong 9999.
+  - attacker (172.22.0.5): may bi xam nhap, dang tan cong mang.
+
+Nhiem vu cua ban la PHAT HIEN tan cong TCP, khong phai thuc hien tan cong:
+  1) Phan tich capture SYN flood, tim IP nguon va so goi SYN.
+  2) Phan tich capture RST injection, tim goi RST gia mao.
+  3) Phan tich capture session hijacking, tim du lieu bi chen.
+  4) Bat song va phat hien mot cu quet cong (SYN scan) dang dien ra.
+
+Ghi cau tra loi vao ~/answers.txt tren may analyst, sau do chay checkwork.

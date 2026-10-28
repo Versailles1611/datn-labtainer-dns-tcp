@@ -1,0 +1,22 @@
+#!/bin/bash
+# Prestop for the analyst container: show the incident answers and
+# validate the live SYN scan capture.
+echo "=== INCIDENT ANSWERS ==="
+cat "$HOME/answers.txt" 2>/dev/null || echo "NO_ANSWERS_FILE"
+
+echo "=== LIVE SCAN CAPTURE ==="
+PCAP="$HOME/live-scan.pcap"
+if [ -f "$PCAP" ]; then
+    out=$(sudo -n tcpdump -nn -r "$PCAP" 'src host 172.22.0.5 and tcp[tcpflags] & tcp-syn != 0' 2>/dev/null)
+    syns=$(printf '%s\n' "$out" | grep -c 'Flags \[S')
+    ports=$(printf '%s\n' "$out" | awk '{print $5}' | sed 's/.*\.//' | tr -dc '0-9\n' | sort -n | uniq | wc -l)
+    echo "LIVE_SCAN_SYN=$syns"
+    echo "LIVE_SCAN_PORTS=$ports"
+    if [ "$ports" -ge 20 ]; then
+        echo "LIVE_SCAN=OK"
+    else
+        echo "LIVE_SCAN=WEAK"
+    fi
+else
+    echo "LIVE_SCAN=MISSING"
+fi

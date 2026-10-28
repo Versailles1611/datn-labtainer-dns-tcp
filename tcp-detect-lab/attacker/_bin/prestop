@@ -1,0 +1,6 @@
+#!/bin/bash
+# Prestop for the attacker: show that the live scanner is running.
+echo "=== ATTACKER SCANNER PROCESS ==="
+ps aux 2>/dev/null | grep '[s]can.py' || echo "SCANNER_NOT_RUNNING"
+echo "=== ATTACKER SCANNER LOG ==="
+tail -20 /tmp/scan.log 2>/dev/null || echo "NO_SCAN_LOG"

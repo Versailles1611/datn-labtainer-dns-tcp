@@ -1,0 +1,6 @@
+#!/bin/bash
+# Prestop for the server: show the echo service log and connections.
+echo "=== SERVER SESSION LOG ==="
+cat /var/log/session.log 2>/dev/null || echo "NO_SESSION_LOG"
+echo "=== SERVER CONNECTIONS ON 9999 ==="
+ss -tn 2>/dev/null | grep 9999 || echo "NO_9999_CONNECTIONS"

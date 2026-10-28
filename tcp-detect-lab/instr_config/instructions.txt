@@ -1,0 +1,141 @@
+BAI LAB: PHAT HIEN TAN CONG TCP
+================================
+
+BOI CANH
+--------
+Ban la chuyen vien SOC cua mot mang LAN nho (172.22.0.0/24):
+
+  - analyst  (172.22.0.2): may tram cua ban, co tcpdump va cac capture.
+  - victim   (172.22.0.3): may nguoi dung binh thuong.
+  - server   (172.22.0.4): dich vu TCP echo tren cong 9999.
+  - attacker (172.22.0.5): may bi xam nhap, dang tan cong mang.
+
+MAC hop le cua cac may duoc ghi trong ~/captures/README.txt.
+Dau hieu quan trong: ke tan cong gui goi tin voi IP gia mao nhung
+thuong dung MAC that cua no. Hay so sanh MAC Ethernet voi IP nguon.
+
+MUC TIEU
+--------
+Phat hien 4 loai tan cong TCP, ghi ket qua vao ~/answers.txt:
+
+  1) SYN flood          (phan tich 01-syn-flood.pcap)
+  2) RST injection      (phan tich 02-rst-injection.pcap)
+  3) Session hijacking  (phan tich 03-session-hijack.pcap)
+  4) SYN port scan      (bat song tren analyst)
+
+Sau khi dien du, chay checkwork de cham diem.
+
+------------------------------------------------------------------
+BUOC 1 - SYN FLOOD
+------------------------------------------------------------------
+Tren analyst:
+
+    cd ~/captures
+    tcpdump -nn -r 01-syn-flood.pcap | head -20
+
+Dem cac goi SYN khong co ACK:
+
+    tcpdump -nn -r 01-syn-flood.pcap \
+      'tcp[tcpflags] & tcp-syn != 0 and tcp[tcpflags] & tcp-ack == 0' | wc -l
+
+Xac dinh:
+  - IP nguon gui nhieu SYN nhat  -> SYN_FLOOD_SRC
+  - So goi SYN                    -> SYN_COUNT
+
+------------------------------------------------------------------
+BUOC 2 - RST INJECTION
+------------------------------------------------------------------
+Tren analyst:
+
+    tcpdump -nn -e -S -r 02-rst-injection.pcap \
+      'tcp[tcpflags] & tcp-rst != 0'
+
+Goi RST se hien thi ca MAC Ethernet (-e) va sequence tuyet doi (-S).
+Chu y:
+  - Dia chi IP nguon cua RST la cua victim (172.22.0.3)
+  - Nhung MAC Ethernet lai la cua attacker (02:42:ac:16:00:05)
+  - Day la dau hieu RST bi gia mao.
+
+Ghi lai:
+  - sequence number cua goi RST  -> RST_SEQ
+  - MAC nguon Ethernet cua RST   -> RST_SRC_MAC
+
+------------------------------------------------------------------
+BUOC 3 - SESSION HIJACKING
+------------------------------------------------------------------
+Tren analyst:
+
+    tcpdump -nn -e -S -A -r 03-session-hijack.pcap 'tcp port 9999'
+
+Tim goi tin co payload HIJACKED. Goi nay:
+  - Co IP/port nguon giong victim
+  - Nhung MAC Ethernet la cua attacker
+  - Sequence nam tiep ngay sau du lieu HELLO cua victim
+  - Server van ACK du lieu nay (xem goi ACK:HIJACKED)
+
+Ghi lai:
+  - sequence number cua goi chua HIJACKED  -> HIJACK_SEQ
+  - chuoi du lieu bi chen                  -> HIJACK_PAYLOAD
+
+------------------------------------------------------------------
+BUOC 4 - BAT SONG SYN PORT SCAN
+------------------------------------------------------------------
+Tren analyst, bat capture trong khoang 15 giay:
+
+    sudo tcpdump -Z root -U -nn -i eth0 -w ~/live-scan.pcap 'tcp[tcpflags] & tcp-syn != 0'
+
+Doi khoang 15 giay roi nhan Ctrl+C.
+
+Xem cac goi da bat:
+
+    sudo tcpdump -nn -r ~/live-scan.pcap | head -20
+
+May attacker quet cac cong 1-100 cua analyst lap lai moi ~8 giay.
+Dem so cong dich khac nhau:
+
+    sudo tcpdump -nn -r ~/live-scan.pcap 'src host 172.22.0.5' \
+      | awk '{print $5}' | sed 's/.*\.//' | tr -d ':' \
+      | sort -n | uniq | wc -l
+
+Neu chua thay goi nao, doi 10 giay roi bat lai (qua trinh quet lap lai).
+Ghi lai IP cua may quet -> LIVE_SCAN_SRC.
+
+------------------------------------------------------------------
+BUOC 5 - GHI KET QUA
+------------------------------------------------------------------
+Mo file tra loi:
+
+    nano ~/answers.txt
+
+Dien cac dong theo dung dinh dang KEY=value, vi du:
+
+    SYN_FLOOD_SRC=...
+    SYN_COUNT=...
+    RST_SEQ=...
+    RST_SRC_MAC=...
+    HIJACK_SEQ=...
+    HIJACK_PAYLOAD=...
+    LIVE_SCAN_SRC=...
+
+Khong them khoang trang quanh dau =.
+
+------------------------------------------------------------------
+BUOC 6 - CHAM DIEM
+------------------------------------------------------------------
+Tu Linux host (cua so terminal chay labtainer):
+
+    checkwork tcp-detect-lab
+
+Cac muc can dat:
+  - syn_flood_identified
+  - rst_injection_identified
+  - session_hijack_identified
+  - live_port_scan_identified
+  - all_passed
+
+------------------------------------------------------------------
+KET THUC
+------------------------------------------------------------------
+    stoplab tcp-detect-lab
+
+Ket qua checkwork duoc luu de cham diem.

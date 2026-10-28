@@ -1,0 +1,13 @@
+tcp attack detection
+syn flood
+rst injection
+session hijacking
+tcp session hijack
+port scan
+syn scan
+tcpdump
+packet capture
+pcap
+incident response
+soc analyst
+network forensics

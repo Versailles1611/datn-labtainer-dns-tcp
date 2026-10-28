@@ -1,0 +1,10 @@
+#!/bin/bash
+for i in $(seq 1 30); do
+    ip -4 addr show eth0 2>/dev/null | grep -q "inet " && break
+    sleep 1
+done
+mkdir -p /var/log
+touch /var/log/session.log
+chmod 666 /var/log/session.log
+systemctl start tcp-server
+exit 0

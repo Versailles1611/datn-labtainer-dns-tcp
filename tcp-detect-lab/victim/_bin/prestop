@@ -1,0 +1,6 @@
+#!/bin/bash
+# Prestop for the victim: show connections and ARP cache.
+echo "=== VICTIM CONNECTIONS ==="
+ss -tn 2>/dev/null | grep 9999 || echo "NO_9999_CONNECTIONS"
+echo "=== VICTIM ARP CACHE ==="
+ip neigh 2>/dev/null

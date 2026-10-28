@@ -1,0 +1,14 @@
+# TCP attack detection - incident answers
+#
+# Dien ket qua phan tich cua ban vao cac dong duoi day.
+# Giu dung dinh dang KEY=value, khong them khoang trang quanh dau =.
+#
+# Vi du: SYN_FLOOD_SRC=172.22.0.5
+#
+SYN_FLOOD_SRC=
+SYN_COUNT=
+RST_SEQ=
+RST_SRC_MAC=
+HIJACK_SEQ=
+HIJACK_PAYLOAD=
+LIVE_SCAN_SRC=
